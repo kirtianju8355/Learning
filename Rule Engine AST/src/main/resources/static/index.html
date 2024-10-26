@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Rule Engine</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			margin: 20px;
+		}
+
+		input,
+		textarea,
+		select,
+		button {
+			margin-bottom: 10px;
+			width: 100%;
+			padding: 8px;
+		}
+
+		button {
+			margin-top: 10px;
+			padding: 8px 12px;
+			cursor: pointer;
+		}
+
+		#result-container {
+			margin-top: 20px;
+			padding: 10px;
+			border: 1px solid #ddd;
+		}
+
+		.section {
+			margin-bottom: 30px;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>Rule Engine Application</h1>
+
+	<!-- Section to Create Rule -->
+	<div class="section">
+		<h2>Create Rule</h2>
+		<form id="ruleForm">
+			<label for="ruleString">Rule String:</label>
+			<input type="text" id="ruleString" name="ruleString"
+				placeholder="E.g., ((age > 30 AND department = 'Sales') OR (age < 25 AND department = 'Marketing'))"
+				required>
+			<button type="submit">Create Rule</button>
+		</form>
+		<div id="createResult"></div>
+	</div>
+
+	<!-- Section to Combine Rules -->
+	<div class="section">
+		<h2>Combine Rules</h2>
+		<form id="combineForm">
+			<label for="rules">Enter Rule Strings to Combine (one per line):</label>
+			<textarea id="rules" name="rules" rows="4" placeholder="Enter each rule string on a new line"></textarea>
+			<button type="submit">Combine Rules</button>
+		</form>
+		<div id="combineResult"></div>
+	</div>
+
+	<!-- Section to Evaluate Rule -->
+	<div class="section">
+		<h2>Evaluate Rule</h2>
+		<form id="evaluateForm">
+			<label for="ruleId">Rule ID:</label>
+			<input type="number" id="ruleId" name="ruleId" placeholder="Enter Rule ID to Evaluate" required>
+
+			<label for="age">Age:</label>
+			<input type="number" id="age" name="age" placeholder="E.g., 35">
+
+			<label for="department">Department:</label>
+			<input type="text" id="department" name="department" placeholder="E.g., Sales">
+
+			<label for="salary">Salary:</label>
+			<input type="number" id="salary" name="salary" placeholder="E.g., 60000">
+
+			<label for="experience">Experience (Years):</label>
+			<input type="number" id="experience" name="experience" placeholder="E.g., 5">
+
+			<button type="submit">Evaluate Rule</button>
+		</form>
+		<div id="evaluateResult"></div>
+	</div>
+
+	<!-- JavaScript for UI Interactions -->
+	<script>
+		// Create Rule
+		document.getElementById('ruleForm').onsubmit = async (e) => {
+			e.preventDefault();
+			const ruleString = document.getElementById('ruleString').value;
+
+			const response = await fetch('/api/rules/create', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ruleString})
+			});
+
+			const result = await response.json();
+			document.getElementById('createResult').innerHTML = `
+                <div id="result-container">
+                    <h3>Rule Created Successfully</h3>
+                    <p><strong>ID:</strong> ${result.id}</p>
+                    <p><strong>Rule String:</strong> ${result.ruleString}</p>
+                    <p><strong>Created At:</strong> ${new Date(result.createdAt).toLocaleString()}</p>
+                </div>
+            `;
+		};
+
+		// Combine Rules
+		document.getElementById('combineForm').onsubmit = async (e) => {
+			e.preventDefault();
+			const rules = document.getElementById('rules').value.split('\n').filter(rule => rule.trim());
+
+			const response = await fetch('/api/rules/combine', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({rules})
+			});
+
+			const result = await response.json();
+			document.getElementById('combineResult').innerHTML = `
+                <div id="result-container">
+                    <h3>Rules Combined Successfully</h3>
+                    <p><strong>Combined AST Root:</strong> ${JSON.stringify(result)}</p>
+                </div>
+            `;
+		};
+
+		// Evaluate Rule
+		document.getElementById('evaluateForm').onsubmit = async (e) => {
+			e.preventDefault();
+			const ruleId = document.getElementById('ruleId').value;
+			const data = {
+				age: document.getElementById('age').value || null,
+				department: document.getElementById('department').value || null,
+				salary: document.getElementById('salary').value || null,
+				experience: document.getElementById('experience').value || null
+			};
+
+			const response = await fetch(`/api/rules/evaluate/${ruleId}`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(data)
+			});
+
+			const result = await response.json();
+			document.getElementById('evaluateResult').innerHTML = `
+                <div id="result-container">
+                    <h3>Rule Evaluation Result</h3>
+                    <p><strong>Evaluation Outcome:</strong> ${result ? "Eligible" : "Not Eligible"}</p>
+                </div>
+            `;
+		};
+	</script>
+</body>
+
+</html>
